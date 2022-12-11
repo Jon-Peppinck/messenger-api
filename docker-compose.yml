@@ -31,7 +31,7 @@ services:
       context: ./
       dockerfile: ./apps/api/Dockerfile
     ports:
-      - '5000:5000'
+      - '4000:5000'
     env_file:
       - .env
     depends_on:
