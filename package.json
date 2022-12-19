@@ -7,7 +7,6 @@
   "license": "UNLICENSED",
   "scripts": {
     "prebuild": "rimraf dist",
-    "build": "nest build",
     "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -18,7 +17,14 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./apps/api/test/jest-e2e.json"
+    "test:e2e": "jest --config ./apps/api/test/jest-e2e.json",
+    "build:api": "nest build api",
+    "build:auth": "nest build auth",
+    "build": "npm run build:api && npm run build:auth",
+    "typeorm": "npx typeorm -d ./dist/apps/auth/db/data-source.js",
+    "generate:migration": "npm run typeorm -- migration:generate",
+    "run:migration": "npm run typeorm -- migration:run",
+    "revert:migration": "npm run typeorm -- migration:revert"
   },
   "dependencies": {
     "@nestjs/common": "^9.0.0",
