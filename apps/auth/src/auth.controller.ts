@@ -1,4 +1,4 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import { Ctx, MessagePattern, RmqContext } from '@nestjs/microservices';
 
 import { SharedService } from '@app/shared';
@@ -8,7 +8,9 @@ import { AuthService } from './auth.service';
 @Controller()
 export class AuthController {
   constructor(
+    @Inject('AuthServiceInterface')
     private readonly authService: AuthService,
+    @Inject('SharedServiceInterface')
     private readonly sharedService: SharedService,
   ) {}
 

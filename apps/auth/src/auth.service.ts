@@ -1,22 +1,21 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-
-import { Repository } from 'typeorm';
-
-import { UserEntity } from './user.entity';
+import { Inject, Injectable } from '@nestjs/common';
+import { UserRepositoryInterface } from '@app/shared/interfaces/users.repository.interface';
+import { UserEntity } from '@app/shared/entities/user.entity';
+import { AuthServiceInterface } from './interface/auth.service.interface';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements AuthServiceInterface {
   constructor(
-    @InjectRepository(UserEntity)
-    private readonly userRepository: Repository<UserEntity>,
+    @Inject('UsersRepositoryInterface')
+    private readonly usersRepository: UserRepositoryInterface,
   ) {}
 
-  async getUsers() {
-    return this.userRepository.find();
+  async getUsers(): Promise<UserEntity[]> {
+    return await this.usersRepository.findAll();
   }
 
-  async postUser() {
-    return this.userRepository.save({ lastName: 'Barry' });
+  async postUser(): Promise<UserEntity> {
+    const newUser = this.usersRepository.create({ lastName: 'Barry' });
+    return await this.usersRepository.save(newUser);
   }
 }
