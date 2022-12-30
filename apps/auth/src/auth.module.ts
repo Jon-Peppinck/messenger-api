@@ -1,13 +1,15 @@
-import { UserEntity } from './user.entity';
+import { JwtGuard } from './jwt.guard';
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { SharedModule, PostgresDBModule } from '@app/shared';
+
+import { UserEntity } from './user.entity';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-
-import { PostgresDBModule } from '@app/shared/postgresdb.module';
-import { SharedModule } from '@app/shared';
+import { JwtModule } from '@nestjs/jwt';
+import { JwtStrategy } from './jwt-strategy';
 
 @Module({
   imports: [
@@ -16,12 +18,21 @@ import { SharedModule } from '@app/shared';
       envFilePath: './.env',
     }),
 
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get('JWT_SECRET'),
+        signOptions: { expiresIn: '3600s' },
+      }),
+      inject: [ConfigService],
+    }),
+
     SharedModule,
     PostgresDBModule,
 
     TypeOrmModule.forFeature([UserEntity]),
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, JwtGuard, JwtStrategy],
 })
 export class AuthModule {}
