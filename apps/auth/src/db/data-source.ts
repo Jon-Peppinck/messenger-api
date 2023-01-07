@@ -1,4 +1,4 @@
-import { UserEntity } from './../user.entity';
+import { UserEntity } from '../../../../libs/shared/src/entities/user.entity';
 import { DataSource, DataSourceOptions } from 'typeorm';
 
 export const dataSourceOptions: DataSourceOptions = {

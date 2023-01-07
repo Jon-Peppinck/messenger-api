@@ -1,32 +1,34 @@
 import {
   ConflictException,
   Injectable,
+  Inject,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
 
 import * as bcrypt from 'bcrypt';
-import { Repository } from 'typeorm';
-import { ExistingUserDTO } from './dtos/existing-user.dto';
 
+import { UserEntity, UserRepositoryInterface } from '@app/shared';
+
+import { ExistingUserDTO } from './dtos/existing-user.dto';
 import { NewUserDTO } from './dtos/new-user.dto';
-import { UserEntity } from './user.entity';
+
+import { AuthServiceInterface } from './interface/auth.service.interface';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements AuthServiceInterface {
   constructor(
-    @InjectRepository(UserEntity)
-    private readonly userRepository: Repository<UserEntity>,
+    @Inject('UsersRepositoryInterface')
+    private readonly usersRepository: UserRepositoryInterface,
     private readonly jwtService: JwtService,
   ) {}
 
-  async getUsers() {
-    return this.userRepository.find();
+  async getUsers(): Promise<UserEntity[]> {
+    return await this.usersRepository.findAll();
   }
 
   async findByEmail(email: string): Promise<UserEntity> {
-    return this.userRepository.findOne({
+    return this.usersRepository.findByCondition({
       where: { email },
       select: ['id', 'firstName', 'lastName', 'email', 'password'],
     });
@@ -47,7 +49,7 @@ export class AuthService {
 
     const hashedPassword = await this.hashPassword(password);
 
-    const savedUser = await this.userRepository.save({
+    const savedUser = await this.usersRepository.save({
       firstName,
       lastName,
       email,

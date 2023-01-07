@@ -1,4 +1,4 @@
-import { Controller, UseGuards } from '@nestjs/common';
+import { Controller, UseGuards, Inject } from '@nestjs/common';
 import {
   Ctx,
   MessagePattern,
@@ -16,7 +16,9 @@ import { JwtGuard } from './jwt.guard';
 @Controller()
 export class AuthController {
   constructor(
+    @Inject('AuthServiceInterface')
     private readonly authService: AuthService,
+    @Inject('SharedServiceInterface')
     private readonly sharedService: SharedService,
   ) {}
 
