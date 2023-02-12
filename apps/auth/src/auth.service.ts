@@ -92,9 +92,11 @@ export class AuthService implements AuthServiceInterface {
       throw new UnauthorizedException();
     }
 
+    delete user.password;
+
     const jwt = await this.jwtService.signAsync({ user });
 
-    return { token: jwt };
+    return { token: jwt, user };
   }
 
   async verifyJwt(jwt: string): Promise<{ exp: number }> {
