@@ -21,13 +21,13 @@ export class AuthGuard implements CanActivate {
       return false;
     }
 
-    const authHeader = context.switchToHttp().getRequest().headers[
-      'authorization'
-    ] as string;
+    const request = context.switchToHttp().getRequest();
+
+    const authHeader = request.headers['authorization'];
 
     if (!authHeader) return false;
 
-    const authHeaderParts = authHeader.split(' ');
+    const authHeaderParts = (authHeader as string).split(' ');
 
     if (authHeaderParts.length !== 2) return false;
 
@@ -40,6 +40,7 @@ export class AuthGuard implements CanActivate {
         const TOKEN_EXP_MS = exp * 1000;
 
         const isJwtValid = Date.now() < TOKEN_EXP_MS;
+
         return of(isJwtValid);
       }),
       catchError(() => {
