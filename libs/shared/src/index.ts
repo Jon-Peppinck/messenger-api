@@ -1,10 +1,12 @@
 // modules
-export * from './shared.module';
-export * from './postgresdb.module';
+export * from './modules/shared.module';
+export * from './modules/postgresdb.module';
+export * from './modules/redis.module';
 // services
-export * from './shared.service';
+export * from './services/shared.service';
+export * from './services/redis.service';
 // guards
-export * from './auth.guard';
+export * from './guards/auth.guard';
 // entities
 export * from './entities/user.entity';
 export * from './entities/friend-request.entity';

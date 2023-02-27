@@ -43,7 +43,6 @@ import { JwtStrategy } from './jwt-strategy';
   providers: [
     JwtGuard,
     JwtStrategy,
-
     {
       provide: 'AuthServiceInterface',
       useClass: AuthService,
