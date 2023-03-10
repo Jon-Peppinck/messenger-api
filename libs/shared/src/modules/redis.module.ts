@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 
 import { redisStore } from 'cache-manager-redis-yet';
 
-import { RedisService } from '../services/redis.service';
+import { RedisCacheService } from '../services/redis-cache.service';
 
 @Module({
   imports: [
@@ -11,14 +11,13 @@ import { RedisService } from '../services/redis.service';
       useFactory: async (configService: ConfigService) => ({
         store: await redisStore({
           url: configService.get('REDIS_URI'),
-          ttl: 0,
         }),
       }),
       isGlobal: true,
       inject: [ConfigService],
     }),
   ],
-  providers: [RedisService],
-  exports: [RedisService],
+  providers: [RedisCacheService],
+  exports: [RedisCacheService],
 })
 export class RedisModule {}

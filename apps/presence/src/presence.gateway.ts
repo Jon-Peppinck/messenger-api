@@ -1,4 +1,4 @@
-import { Inject, CACHE_MANAGER } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
   OnGatewayConnection,
@@ -10,9 +10,8 @@ import {
 
 import { Server, Socket } from 'socket.io';
 import { firstValueFrom } from 'rxjs';
-import { Cache } from 'cache-manager';
 
-import { FriendRequestEntity, UserJwt } from '@app/shared';
+import { UserJwt, RedisCacheService } from '@app/shared';
 
 import { ActiveUser } from './interfaces/ActiveUser.interface';
 
@@ -22,7 +21,7 @@ export class PresenceGateway
 {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authService: ClientProxy,
-    @Inject(CACHE_MANAGER) private readonly cache: Cache,
+    private readonly cache: RedisCacheService,
   ) {}
 
   @WebSocketServer()
@@ -34,36 +33,18 @@ export class PresenceGateway
   }
 
   private async getFriends(userId: number) {
-    const ob$ = this.authService.send<FriendRequestEntity[]>(
+    const ob$ = this.authService.send(
       {
-        cmd: 'get-friends',
+        cmd: 'get-friends-list',
       },
       {
         userId,
       },
     );
 
-    const friendRequests = await firstValueFrom(ob$).catch((err) =>
+    const friends = await firstValueFrom(ob$).catch((err) =>
       console.error(err),
     );
-
-    if (!friendRequests) return;
-
-    const friends = friendRequests.map((friendRequest) => {
-      const isUserCreator = userId === friendRequest.creator.id;
-      const friendDetails = isUserCreator
-        ? friendRequest.receiver
-        : friendRequest.creator;
-
-      const { id, firstName, lastName, email } = friendDetails;
-
-      return {
-        id,
-        email,
-        firstName,
-        lastName,
-      };
-    });
 
     return friends;
   }
@@ -103,7 +84,7 @@ export class PresenceGateway
       isActive,
     };
 
-    await this.cache.set(`user ${user.id}`, activeUser, 0);
+    await this.cache.set(`user ${user.id}`, activeUser);
     await this.emitStatusToFriends(activeUser);
   }
 

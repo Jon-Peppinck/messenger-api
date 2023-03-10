@@ -43,6 +43,24 @@ services:
       - /usr/src/app/node_modules
     command: npm run start:dev presence # overrides CMD from dockerfile
 
+  chat:
+    build:
+      context: ./
+      dockerfile: ./apps/chat/Dockerfile
+    ports:
+      - '7000:7000'
+    env_file:
+      - .env
+    depends_on:
+      - rabbitmq
+      - postgres
+      - redis
+      - presence
+    volumes:
+      - .:/usr/src/app # any change to base folder should be reflected
+      - /usr/src/app/node_modules
+    command: npm run start:dev chat # overrides CMD from dockerfile
+
   api:
     build:
       context: ./

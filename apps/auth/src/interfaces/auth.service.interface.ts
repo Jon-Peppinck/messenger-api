@@ -5,6 +5,7 @@ import { NewUserDTO } from '../dtos/new-user.dto';
 
 export interface AuthServiceInterface {
   getUsers(): Promise<UserEntity[]>;
+  getUserById(id: number): Promise<UserEntity>;
   findByEmail(email: string): Promise<UserEntity>;
   findById(id: number): Promise<UserEntity>;
   hashPassword(password: string): Promise<string>;
