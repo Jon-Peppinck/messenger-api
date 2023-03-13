@@ -114,26 +114,41 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       newMessage,
     );
 
+    const friendId = createdMessage.conversation.users.find(
+      (u) => u.id !== user.id,
+    ).id;
+
     const ob$ = this.presenceService.send(
       {
         cmd: 'get-active-user',
       },
-      { id: newMessage.friendId },
+      { id: friendId },
     );
 
     const activeFriend = await firstValueFrom(ob$).catch((err) =>
       console.error(err),
     );
 
-    if (!activeFriend || !activeFriend.isActive) return;
+    console.log(78, activeFriend);
+
+    if (!activeFriend) return;
 
     const friendsDetails = (await this.cache.get(
-      `conversationUser ${newMessage.friendId}`,
+      `conversationUser ${activeFriend.id}`,
     )) as { id: number; socketId: string } | undefined;
+
+    console.log(98, friendsDetails);
 
     if (!friendsDetails) return;
 
     const { id, message, user: creator, conversation } = createdMessage;
+
+    console.log(54, {
+      id,
+      message,
+      creatorId: creator.id,
+      conversationId: conversation.id,
+    });
 
     this.server.to(friendsDetails.socketId).emit('newMessage', {
       id,
@@ -141,5 +156,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       creatorId: creator.id,
       conversationId: conversation.id,
     });
+  }
+
+  @SubscribeMessage('ping')
+  async ping(socket: Socket) {
+    console.log('Keep socket connection alive!');
   }
 }

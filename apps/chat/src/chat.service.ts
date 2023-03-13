@@ -1,15 +1,15 @@
-import { ConversationEntity } from './../../../libs/shared/src/entities/conversation.entity';
-import { NewMessageDTO } from './dtos/NewMessage.dto';
+import { ClientProxy } from '@nestjs/microservices';
 import { Inject, Injectable } from '@nestjs/common';
+
+import { firstValueFrom } from 'rxjs';
 
 import {
   MessagesRepositoryInterface,
   ConversationsRepositoryInterface,
   UserEntity,
 } from '@app/shared';
-import { ClientProxy } from '@nestjs/microservices';
 
-import { firstValueFrom } from 'rxjs';
+import { NewMessageDTO } from './dtos/NewMessage.dto';
 
 @Injectable()
 export class ChatService {
@@ -80,10 +80,10 @@ export class ChatService {
 
     if (!user) return;
 
-    const conversation = await this.conversationsRepository.findConversation(
-      userId,
-      newMessage.friendId,
-    );
+    const conversation = await this.conversationsRepository.findByCondition({
+      where: [{ id: newMessage.conversationId }],
+      relations: ['users'],
+    });
 
     if (!conversation) return;
 
