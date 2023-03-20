@@ -15,6 +15,7 @@ import { RedisCacheService, UserJwt } from '@app/shared';
 
 import { ChatService } from './chat.service';
 import { NewMessageDTO } from './dtos/NewMessage.dto';
+import { CallDetailsDTO } from './dtos/CallDetails.dto';
 
 @WebSocketGateway({ cors: true })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -90,6 +91,27 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     await this.cache.set(`conversationUser ${user.id}`, conversationUser);
   }
 
+  private async getFriendDetails(id: number) {
+    const ob$ = this.presenceService.send(
+      {
+        cmd: 'get-active-user',
+      },
+      { id },
+    );
+
+    const activeFriend = await firstValueFrom(ob$).catch((err) =>
+      console.error(err),
+    );
+
+    if (!activeFriend) return;
+
+    const friendsDetails = (await this.cache.get(
+      `conversationUser ${activeFriend.id}`,
+    )) as { id: number; socketId: string } | undefined;
+
+    return friendsDetails;
+  }
+
   @SubscribeMessage('getConversations')
   async getConversations(socket: Socket) {
     const { user } = socket.data;
@@ -118,39 +140,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       (u) => u.id !== user.id,
     ).id;
 
-    const ob$ = this.presenceService.send(
-      {
-        cmd: 'get-active-user',
-      },
-      { id: friendId },
-    );
+    const friendDetails = await this.getFriendDetails(friendId);
 
-    const activeFriend = await firstValueFrom(ob$).catch((err) =>
-      console.error(err),
-    );
-
-    console.log(78, activeFriend);
-
-    if (!activeFriend) return;
-
-    const friendsDetails = (await this.cache.get(
-      `conversationUser ${activeFriend.id}`,
-    )) as { id: number; socketId: string } | undefined;
-
-    console.log(98, friendsDetails);
-
-    if (!friendsDetails) return;
+    if (!friendDetails) return;
 
     const { id, message, user: creator, conversation } = createdMessage;
 
-    console.log(54, {
-      id,
-      message,
-      creatorId: creator.id,
-      conversationId: conversation.id,
-    });
-
-    this.server.to(friendsDetails.socketId).emit('newMessage', {
+    this.server.to(friendDetails.socketId).emit('newMessage', {
       id,
       message,
       creatorId: creator.id,
@@ -161,5 +157,41 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('ping')
   async ping(socket: Socket) {
     console.log('Keep socket connection alive!');
+  }
+
+  @SubscribeMessage('startCall')
+  async startCall(socket: Socket, callDetails: CallDetailsDTO) {
+    const { user } = socket.data;
+
+    if (!user || !callDetails) return;
+
+    const friendDetails = await this.getFriendDetails(callDetails.friendId);
+
+    if (!friendDetails) return;
+
+    const userCallDetails = {
+      meetingId: callDetails.meetingId,
+      friendId: user.id,
+    };
+
+    this.server.to(friendDetails.socketId).emit('receiveCall', userCallDetails);
+  }
+
+  @SubscribeMessage('declineCall')
+  async declineCall(socket: Socket, friendId: number) {
+    const friendDetails = await this.getFriendDetails(friendId);
+
+    this.server.to(friendDetails.socketId).emit('callResponse', {
+      status: 'DECLINED',
+    });
+  }
+
+  @SubscribeMessage('acceptCall')
+  async acceptCall(socket: Socket, friendId: number) {
+    const friendDetails = await this.getFriendDetails(friendId);
+
+    this.server.to(friendDetails.socketId).emit('callResponse', {
+      status: 'ACCEPTED',
+    });
   }
 }
